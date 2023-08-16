@@ -38,9 +38,9 @@ async function run() {
       res.send({ token });
     });
 
+    // taking user's data when creating account
     app.post("/add-user", async (req, res) => {
       const { user } = req.body;
-      console.log(user.name, user.email);
 
       const existing = await usersCollection.findOne({ email: user.email });
       if (existing) {
@@ -48,6 +48,38 @@ async function run() {
       }
 
       const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+
+    // ========================== sending contacts to the client ==========================
+    app.get("/contacts/:email", async (req, res) => {
+      // const email = req.query?.email;
+      const { email } = req.params;
+      const query = { email: email };
+
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    });
+
+    // ========================== Adding new contact that is comming from client ==========================
+    app.patch("/add-contact/:email", async (req, res) => {
+      const email = req.params?.email;
+      const { contact } = req.body;
+      let query = {};
+
+      if (req.params?.email) {
+        query = { email: email };
+      }
+
+      const user = await usersCollection.findOne(query);
+      const contacts = user?.contacts;
+
+      const newContacts = {
+        $set: { contacts: [...contacts, contact] },
+      };
+
+      const result = await usersCollection.updateOne(query, newContacts);
+
       res.send(result);
     });
 
