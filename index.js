@@ -38,6 +38,19 @@ async function run() {
       res.send({ token });
     });
 
+    app.post("/add-user", async (req, res) => {
+      const { user } = req.body;
+      console.log(user.name, user.email);
+
+      const existing = await usersCollection.findOne({ email: user.email });
+      if (existing) {
+        return res.send({ message: "The user is already exist." });
+      }
+
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
