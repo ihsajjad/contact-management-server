@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hbiibcp.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -71,13 +71,11 @@ async function run() {
         query = { email: email };
       }
 
-      const user = await usersCollection.findOne(query);
-      const contacts = user?.contacts;
+      contact._id = new ObjectId();
 
       const newContacts = {
-        $set: { contacts: [...contacts, contact] },
+        $push: { contacts: contact },
       };
-
       const result = await usersCollection.updateOne(query, newContacts);
 
       res.send(result);
