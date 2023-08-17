@@ -81,6 +81,21 @@ async function run() {
       res.send(result);
     });
 
+    // ========================== Deleting individual contact ==========================
+    app.patch("/delete-contact", async (req, res) => {
+      const email = req.query?.email;
+      const id = req.query?.id;
+
+      const query = { email: email };
+
+      const deleteItem = {
+        $pull: { contacts: { _id: new ObjectId(id) } },
+      };
+
+      const result = await usersCollection.updateOne(query, deleteItem);
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
