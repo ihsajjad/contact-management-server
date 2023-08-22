@@ -52,6 +52,17 @@ async function run() {
       res.send(result);
     });
 
+    // ========================== Getting All users ==========================
+
+    app.get("/all-users", async (req, res) => {
+      const options = {
+        sort: { name: 1 },
+        projection: { _id: 1, name: 1, email: 1 },
+      };
+      const result = await usersCollection.find({}, options).toArray();
+      res.send(result);
+    });
+
     // ========================== sending contacts to the client ==========================
     app.get("/contacts/:email", async (req, res) => {
       // const email = req.query?.email;
@@ -107,7 +118,6 @@ async function run() {
 
       const query = {
         email: email,
-        // "contacts._id": new ObjectId(contact._id),
         "contacts._id": contact._id,
       };
 
@@ -135,6 +145,24 @@ async function run() {
       }
 
       res.send(result);
+    });
+
+    // ========================== Setting shared contacts to the user's object ==========================
+    app.patch("/share-contacts/:email", async (req, res) => {
+      const { email } = req.params;
+      const { sharedContacts } = req.body;
+
+      // const user = await usersCollection.findOne({ email: email });
+
+      const updatePermittedContacts = {
+        $push: { permittedContacts: { $each: sharedContacts } },
+      };
+
+      const result = await usersCollection.updateOne(
+        { email: email },
+        updatePermittedContacts
+      );
+      console.log(result);
     });
 
     // Send a ping to confirm a successful connection
