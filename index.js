@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 const jwt = require("jsonwebtoken");
+const uuid = require("uuid");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 
@@ -71,7 +72,8 @@ async function run() {
         query = { email: email };
       }
 
-      contact._id = new ObjectId();
+      // contact._id = new ObjectId();
+      contact._id = uuid.v4().slice(0, 12);
 
       const newContacts = {
         $push: { contacts: contact },
@@ -89,10 +91,49 @@ async function run() {
       const query = { email: email };
 
       const deleteItem = {
-        $pull: { contacts: { _id: new ObjectId(id) } },
+        $pull: { contacts: { _id: id } },
       };
 
       const result = await usersCollection.updateOne(query, deleteItem);
+      res.send(result);
+    });
+
+    // ========================== Updating individual contact ==========================
+    app.patch("/update-contact/:email", async (req, res) => {
+      const email = req.params?.email;
+      const { contact } = req.body;
+
+      console.log(contact);
+
+      const query = {
+        email: email,
+        // "contacts._id": new ObjectId(contact._id),
+        "contacts._id": contact._id,
+      };
+
+      const updatedContact = {
+        $set: { "contacts.$": contact },
+      };
+
+      const result = await usersCollection.updateOne(query, updatedContact);
+      console.log(result);
+      res.send(result);
+    });
+
+    // ========================== Getting individual contact ==========================
+    app.get("/get-contact/:email/:contactId", async (req, res) => {
+      const { email, contactId } = req.params;
+
+      const user = await usersCollection.findOne({ email: email });
+
+      let result;
+
+      if (user) {
+        result = await user.contacts?.find(
+          (contact) => contact._id == contactId
+        );
+      }
+
       res.send(result);
     });
 
@@ -114,4 +155,8 @@ app.get("/", (req, res) => {
 
 app.listen(port, () => {
   console.log(`contacts management is running on port ${port}`);
+});
+
+app.on("error", (error) => {
+  console.error("Server error:", error);
 });
