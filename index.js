@@ -152,8 +152,6 @@ async function run() {
       const { email } = req.params;
       const { sharedContacts } = req.body;
 
-      // const user = await usersCollection.findOne({ email: email });
-
       const updatePermittedContacts = {
         $push: { permittedContacts: { $each: sharedContacts } },
       };
@@ -162,7 +160,60 @@ async function run() {
         { email: email },
         updatePermittedContacts
       );
+      res.send(result);
+    });
+
+    // ========================== To get permitted individual contact ==========================
+    app.get("/get-permitted-contact/:email/:contactId", async (req, res) => {
+      const { email, contactId } = req.params;
+
+      const user = await usersCollection.findOne({ email: email });
+
+      let result;
+
+      if (user) {
+        result = await user.permittedContacts?.find(
+          (contact) => contact._id == contactId
+        );
+      }
+
+      res.send(result);
+    });
+
+    // ========================== Updating permitted individual contact ==========================
+    app.patch("/update-permitted-contact/:email", async (req, res) => {
+      const email = req.params?.email;
+      const { contact } = req.body;
+
+      console.log(contact);
+
+      const query = {
+        email: email,
+        "permittedContacts._id": contact._id,
+      };
+
+      const updatedContact = {
+        $set: { "permittedContacts.$": contact },
+      };
+
+      const result = await usersCollection.updateOne(query, updatedContact);
       console.log(result);
+      res.send(result);
+    });
+
+    // ========================== Deleting individual permitted contact ==========================
+    app.patch("/delete-parmitted-contact", async (req, res) => {
+      const email = req.query?.email;
+      const id = req.query?.id;
+
+      const query = { email: email };
+
+      const deleteItem = {
+        $pull: { permittedContacts: { _id: id } },
+      };
+
+      const result = await usersCollection.updateOne(query, deleteItem);
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
